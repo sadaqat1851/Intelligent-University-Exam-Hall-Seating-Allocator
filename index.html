@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelligent University Exam Hall Seating Allocator | AI CSP Engine</title>
+  <meta name="description" content="AI-driven Constraint Satisfaction Problem (CSP) University Exam Hall Seating Allocator with hard ADA accessibility constraints and anti-cheating orthogonal isolation rules.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏛️</text></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="header" role="banner">
+      <div class="brand-wrapper">
+        <div class="brand-logo" aria-hidden="true">🏛️</div>
+        <div class="brand-info">
+          <h1>Intelligent University Exam Hall Seating Allocator</h1>
+          <div class="brand-subtitle">
+            <span>COMSATS University Islamabad</span>
+            <span class="badge-tag">CSC262: AI - I</span>
+            <span class="badge-tag">CSP Engine</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-quick-solve" class="btn btn-primary btn-pulse" title="Run Backtracking CSP Solver immediately">
+          <span>⚡</span> Run CSP Solver
+        </button>
+        <button id="btn-visual-solve" class="btn btn-accent" title="Watch animated backtracking search step-by-step">
+          <span>▶</span> Animated Solve
+        </button>
+        <button id="btn-reset-allocation" class="btn btn-secondary" title="Reset current allocations">
+          <span>↺</span> Reset
+        </button>
+        <button id="btn-theme-toggle" class="btn-icon" aria-label="Toggle Dark/Light Mode" title="Toggle Theme">
+          <span id="theme-icon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Top KPI Stats Bar -->
+    <section class="hero-banner" aria-label="Seating Metrics Summary">
+      <div class="stats-grid">
+        <div class="stat-card" id="card-stat-students">
+          <div class="stat-icon students">👨‍🎓</div>
+          <div class="stat-content">
+            <span class="stat-label">Total Students</span>
+            <span class="stat-value" id="kpi-students-count">50</span>
+            <span class="stat-subtext">3 Sections • 3 Courses</span>
+          </div>
+        </div>
+
+        <div class="stat-card" id="card-stat-halls">
+          <div class="stat-icon halls">🏛️</div>
+          <div class="stat-content">
+            <span class="stat-label">Active Halls</span>
+            <span class="stat-value" id="kpi-halls-count">3</span>
+            <span class="stat-subtext">Hall A, Hall B, Hall C</span>
+          </div>
+        </div>
+
+        <div class="stat-card" id="card-stat-seats">
+          <div class="stat-icon seats">💺</div>
+          <div class="stat-content">
+            <span class="stat-label">Total Desks</span>
+            <span class="stat-value" id="kpi-seats-count">75</span>
+            <span class="stat-subtext"><span id="kpi-allocated-count">50</span> Assigned • <span id="kpi-buffer-count">25</span> Buffer</span>
+          </div>
+        </div>
+
+        <div class="stat-card" id="card-stat-ada">
+          <div class="stat-icon ada">♿</div>
+          <div class="stat-content">
+            <span class="stat-label">ADA Accommodations</span>
+            <span class="stat-value" id="kpi-ada-count">5 / 5</span>
+            <span class="stat-subtext" id="kpi-ada-status">100% Ground Floor Row 1</span>
+          </div>
+        </div>
+
+        <div class="stat-card" id="card-stat-violations">
+          <div class="stat-icon status">🛡️</div>
+          <div class="stat-content">
+            <span class="stat-label">Integrity Status</span>
+            <span class="stat-value" id="kpi-violations-count" style="color: #34d399;">0 Conflicts</span>
+            <span class="stat-subtext" id="kpi-violations-subtext">Orthogonal Isolation Verified</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-navigation" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tab-halls" id="tab-btn-halls">
+        <span>🏛️</span> Interactive Exam Halls
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-studio" id="tab-btn-studio">
+        <span>⚡</span> CSP Solver Studio
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-roster" id="tab-btn-roster">
+        <span>📋</span> Master Roster & Seating Table
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-audit" id="tab-btn-audit">
+        <span>🛡️</span> Academic Integrity Audit
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-print" id="tab-btn-print">
+        <span>🖨️</span> Invigilation Print Suite
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-config" id="tab-btn-config">
+        <span>⚙️</span> Hall & Capacity Builder
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-dossier" id="tab-btn-dossier">
+        <span>📑</span> AI Lab Project Dossier
+      </button>
+    </nav>
+
+    <!-- Main Tab Panes -->
+    <main class="main-content">
+      <!-- TAB 1: Interactive Exam Halls -->
+      <section id="tab-halls" class="tab-pane active" role="tabpanel">
+        <div class="halls-toolbar">
+          <div class="room-pills" id="room-filter-pills">
+            <button class="room-pill active" data-hall-filter="ALL">All Halls Overview</button>
+            <button class="room-pill" data-hall-filter="Hall_A">Hall A ♿ (Ground Floor)</button>
+            <button class="room-pill" data-hall-filter="Hall_B">Hall B (1st Floor)</button>
+            <button class="room-pill" data-hall-filter="Hall_C">Hall C (2nd Floor)</button>
+          </div>
+
+          <div class="halls-view-options">
+            <div class="toggle-group" id="layout-mode-toggle" title="Switch Between 5-Column Floor Grid and Mobile List View">
+              <button class="toggle-btn active" data-layout-mode="grid">🗺️ Grid</button>
+              <button class="toggle-btn" data-layout-mode="list">📋 List</button>
+            </div>
+            <span>Color:</span>
+            <div class="toggle-group" id="color-mode-toggle">
+              <button class="toggle-btn active" data-color-mode="course">Course</button>
+              <button class="toggle-btn" data-color-mode="section">Section</button>
+              <button class="toggle-btn" data-color-mode="ada">ADA</button>
+            </div>
+            <button class="btn btn-secondary btn-icon" id="btn-highlight-ortho" title="Toggle Orthogonal Cheat-Detection Guide">
+              <span>🎯</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hall Display Grids -->
+        <div class="halls-display-area color-by-course" id="halls-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- TAB 2: CSP Solver Studio -->
+      <section id="tab-studio" class="tab-pane" role="tabpanel">
+        <div class="studio-layout">
+          <!-- Left Controls -->
+          <div class="studio-panel">
+            <h2 class="panel-title"><span>⚙️</span> CSP Search Parameters</h2>
+
+            <div class="control-field">
+              <label class="field-label" for="select-algorithm-mode">Search Heuristic & Strategy</label>
+              <select id="select-algorithm-mode" class="select-input">
+                <option value="baseline" selected>Standard Backtracking (Mid.py Baseline)</option>
+                <option value="balanced">Balanced Room Distribution</option>
+              </select>
+              <span class="stat-subtext">Baseline matches Mid.py seed 42 exact sequence.</span>
+            </div>
+
+            <div class="control-field">
+              <label class="field-label" for="solver-speed-slider">Animation Speed</label>
+              <div class="slider-wrapper">
+                <input type="range" id="solver-speed-slider" class="range-slider" min="1" max="5" value="4">
+                <span id="speed-label" style="font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600;">Fast (25ms)</span>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+              <button id="btn-studio-start" class="btn btn-primary" style="flex: 1;">
+                <span id="studio-play-icon">▶</span> Start Animation
+              </button>
+              <button id="btn-studio-step" class="btn btn-secondary" title="Execute single backtracking step">
+                <span>⏭</span> Step
+              </button>
+              <button id="btn-studio-stop" class="btn btn-danger" title="Stop & Reset">
+                <span>⏹</span>
+              </button>
+            </div>
+
+            <div class="live-metrics-row">
+              <div class="metric-box">
+                <div class="metric-title">Search Steps</div>
+                <div class="metric-num" id="metric-steps">0</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-title">Backtracks</div>
+                <div class="metric-num" id="metric-backtracks" style="color: #f87171;">0</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-title">Constraints Checked</div>
+                <div class="metric-num" id="metric-checks">0</div>
+              </div>
+            </div>
+
+            <div class="control-field">
+              <span class="field-label">Current Variable In Scope:</span>
+              <div id="current-evaluating-student" style="background: var(--bg-input); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.8rem;">
+                <span style="color: var(--text-dim);">Awaiting search start...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Telemetry Terminal -->
+          <div class="studio-panel">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <h2 class="panel-title"><span>📟</span> Search Engine Execution Trace</h2>
+              <button id="btn-clear-terminal" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.25rem 0.6rem;">Clear Log</button>
+            </div>
+            <div class="telemetry-terminal" id="telemetry-log">
+              <div class="log-line info">[SYSTEM] CSP Exam Seating Allocator Initialized.</div>
+              <div class="log-line info">[MODEL] Variables: 50 Students (5 ADA priority). Domains: 75 physical hall seats across 3 halls.</div>
+              <div class="log-line info">[CONSTRAINTS] Hard ADA row 1 ground floor check + Orthogonal Manhattan Distance (|Δr| + |Δc| = 1) course & section check.</div>
+              <div class="log-line success">[READY] Click 'Run CSP Solver' or 'Start Animation' to commence state-space search.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Master Roster & Seating Table -->
+      <section id="tab-roster" class="tab-pane" role="tabpanel">
+        <div class="table-toolbar">
+          <div class="search-box-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="roster-search-input" class="text-input search-input" placeholder="Search student ID, name, seat...">
+          </div>
+
+          <div class="table-filters">
+            <select id="filter-hall-select" class="select-input">
+              <option value="ALL">All Halls</option>
+              <option value="Hall_A">Hall A</option>
+              <option value="Hall_B">Hall B</option>
+              <option value="Hall_C">Hall C</option>
+            </select>
+
+            <select id="filter-course-select" class="select-input">
+              <option value="ALL">All Courses</option>
+              <option value="CSC262">CSC262</option>
+              <option value="MTH231">MTH231</option>
+              <option value="DSF201">DSF201</option>
+            </select>
+
+            <select id="filter-section-select" class="select-input">
+              <option value="ALL">All Sections</option>
+              <option value="BDS-3A">BDS-3A</option>
+              <option value="BDS-3B">BDS-3B</option>
+              <option value="BDS-3C">BDS-3C</option>
+            </select>
+
+            <select id="filter-ada-select" class="select-input">
+              <option value="ALL">All Status</option>
+              <option value="ADA">ADA Only (♿)</option>
+              <option value="STANDARD">Standard</option>
+            </select>
+
+            <button id="btn-export-csv" class="btn btn-secondary" title="Export Seating Report to CSV">
+              <span>📥</span> Export CSV
+            </button>
+            <button id="btn-add-student-modal" class="btn btn-primary" title="Add a student">
+              <span>➕</span> Add Student
+            </button>
+            <button id="btn-generate-synthetic" class="btn btn-secondary" title="Generate new test roster">
+              <span>🎲</span> Random Roster
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="master-seating-table">
+            <thead>
+              <tr>
+                <th data-sort="seat_id">Assigned Seat ↕</th>
+                <th data-sort="room">Hall ↕</th>
+                <th data-sort="student_id">Student ID ↕</th>
+                <th data-sort="name">Student Name ↕</th>
+                <th data-sort="section">Degree Section ↕</th>
+                <th data-sort="course_code">Course Paper ↕</th>
+                <th data-sort="ada_needed">ADA Status ↕</th>
+                <th>Orthogonal Neighbors</th>
+                <th>Integrity Check</th>
+              </tr>
+            </thead>
+            <tbody id="master-seating-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 4: Academic Integrity & Audit Matrix -->
+      <section id="tab-audit" class="tab-pane" role="tabpanel">
+        <div class="audit-overview-card">
+          <div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 0.5rem;">
+              Verified Examination Integrity Certificate
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 650px;">
+              The Constraint Satisfaction Problem Engine validates that all physical desks meet institutional anti-cheating separation and disability accessibility requirements.
+            </p>
+          </div>
+          <div style="text-align: right;">
+            <div class="audit-status-badge" id="audit-global-badge">
+              <span>✓</span> 100% CONSTRAINTS SATISFIED
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem;" id="audit-timestamp">
+              Audited: Just now
+            </div>
+          </div>
+        </div>
+
+        <div class="audit-checklist-grid">
+          <div class="checklist-card">
+            <div class="check-item-header">
+              <span class="field-label">Hard Constraint 1: ADA Accessibility</span>
+              <span class="chip chip-section" id="audit-ada-chip">100% PASS</span>
+            </div>
+            <h3 style="font-size: 1.1rem; color: var(--ada-gold);">Wheelchair / Mobility Ground Row 1</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              All students flagged for physical accommodation are placed exclusively in Hall A Row 1 (ground floor accessible seats R1C1 - R1C5).
+            </p>
+            <div style="font-size: 0.78rem; font-family: var(--font-mono); color: #34d399;" id="audit-ada-details">
+              5 of 5 ADA students placed correctly in Hall_A Row 1.
+            </div>
+          </div>
+
+          <div class="checklist-card">
+            <div class="check-item-header">
+              <span class="field-label">Constraint 2: Anti-Cheating Course Isolation</span>
+              <span class="chip chip-section" id="audit-course-chip">0 CLASHES</span>
+            </div>
+            <h3 style="font-size: 1.1rem; color: var(--accent-cyan);">Orthogonal Paper Separation</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              No two students attempting the same exam paper (CSC262, MTH231, DSF201) are seated adjacent to one another (top, bottom, left, right).
+            </p>
+            <div style="font-size: 0.78rem; font-family: var(--font-mono); color: #34d399;" id="audit-course-details">
+              46 orthogonal neighbor pairs inspected: 0 shared-course breaches.
+            </div>
+          </div>
+
+          <div class="checklist-card">
+            <div class="check-item-header">
+              <span class="field-label">Constraint 3: Section Segregation</span>
+              <span class="chip chip-section" id="audit-section-chip">0 CLASHES</span>
+            </div>
+            <h3 style="font-size: 1.1rem; color: #a855f7;">Classmate Isolation Check</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              No two classmates belonging to the same section (BDS-3A, BDS-3B, BDS-3C) sit directly next to each other in any direction.
+            </p>
+            <div style="font-size: 0.78rem; font-family: var(--font-mono); color: #34d399;" id="audit-section-details">
+              46 orthogonal neighbor pairs inspected: 0 shared-section breaches.
+            </div>
+          </div>
+
+          <div class="checklist-card">
+            <div class="check-item-header">
+              <span class="field-label">Constraint 4: Capacity & No Double Booking</span>
+              <span class="chip chip-section" id="audit-capacity-chip">100% UNIQUE</span>
+            </div>
+            <h3 style="font-size: 1.1rem; color: #38bdf8;">Uniqueness & Hall Bounds</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              Every registered student is allocated exactly one unique physical desk within physical hall limits without collision.
+            </p>
+            <div style="font-size: 0.78rem; font-family: var(--font-mono); color: #34d399;" id="audit-capacity-details">
+              50 students allocated to 50 distinct desks across 3 halls.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: Invigilation Print Suite -->
+      <section id="tab-print" class="tab-pane" role="tabpanel">
+        <div class="print-options-toolbar">
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btn-print-chart" class="btn btn-primary" onclick="window.print()">
+              <span>🖨️</span> Print Master Seating Document
+            </button>
+            <button id="btn-print-slips-toggle" class="btn btn-secondary">
+              <span>🏷️</span> Toggle Desk Slips / Master Chart
+            </button>
+          </div>
+          <span style="font-size: 0.82rem; color: var(--text-muted);">
+            Print preview styled for standard A4 paper with official academic headers.
+          </span>
+        </div>
+
+        <div class="printable-document" id="printable-master-sheet">
+          <div class="official-header">
+            <h2>COMSATS UNIVERSITY ISLAMABAD</h2>
+            <div class="official-meta">
+              <strong>OFFICIAL EXAMINATION SEATING CHART & INVIGILATION ROSTER</strong><br>
+              Semester: Fall 2026 | Course: CSC262: Artificial Intelligence - I (Midterm)<br>
+              Department of Computer Science | Date: October 27, 2026
+            </div>
+          </div>
+
+          <div id="print-hall-sections-container">
+            <!-- Dynamically populated for print -->
+          </div>
+
+          <div class="signature-block">
+            <div class="signature-line">
+              Course Instructor / Examiner
+            </div>
+            <div class="signature-line">
+              Chief Invigilator
+            </div>
+            <div class="signature-line">
+              Controller of Examinations
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: Hall & Infrastructure Config -->
+      <section id="tab-config" class="tab-pane" role="tabpanel">
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">Examination Venues & Grid Geometry</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">
+              Configure room capacities, row/column grid matrices, and wheelchair/ADA ground floor availability.
+            </p>
+          </div>
+          <button id="btn-add-room-card" class="btn btn-primary">
+            <span>➕</span> Add New Exam Hall
+          </button>
+        </div>
+
+        <div class="halls-manager-grid" id="halls-config-container">
+          <!-- Dynamically populated room cards -->
+        </div>
+      </section>
+
+      <!-- TAB 7: AI Lab Project Dossier & Academic Defense (AI Lab Project.docx) -->
+      <section id="tab-dossier" class="tab-pane" role="tabpanel">
+        <div class="dossier-container">
+          <!-- Institutional Title Banner -->
+          <div class="dossier-hero">
+            <div>
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                <span class="badge-tag">CSC262: Artificial Intelligence - I</span>
+                <span class="badge-tag">Fall 2026</span>
+                <span class="badge-tag">CUI Islamabad</span>
+              </div>
+              <h2>INTELLIGENT UNIVERSITY EXAM HALL SEATING ALLOCATOR</h2>
+              <div style="font-size: 0.9rem; color: var(--text-muted);">
+                <strong>Project Category:</strong> Artificial Intelligence — Constraint Satisfaction Problem (CSP) / Search Engine
+              </div>
+
+              <div class="authors-grid">
+                <div class="author-badge">
+                  <div class="author-avatar">AR</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.85rem;">Ahsan Raza</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #818cf8;">SP25-BDS-003</div>
+                  </div>
+                </div>
+                <div class="author-badge">
+                  <div class="author-avatar">MG</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.85rem;">Muzzamil Ghaffar</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #818cf8;">SP25-BDS-034</div>
+                  </div>
+                </div>
+                <div class="author-badge">
+                  <div class="author-avatar">MI</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.85rem;">Muhammad Irshad Khan</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #818cf8;">SP25-BDS-025</div>
+                  </div>
+                </div>
+                <div class="author-badge">
+                  <div class="author-avatar">SH</div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.85rem;">Sadaqat Hussain</div>
+                    <div style="font-family: var(--font-mono); font-size: 0.72rem; color: #818cf8;">SP25-BDS-040</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; align-items: flex-end;">
+              <button class="btn btn-primary" onclick="window.print()">
+                <span>🖨️</span> Print Project Report
+              </button>
+              <button class="btn btn-secondary" onclick="document.getElementById('tab-btn-halls').click()">
+                <span>🚀</span> Return to Live Halls
+              </button>
+            </div>
+          </div>
+
+          <!-- Abstract Section -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>📑</span> Abstract</h3>
+              <span class="chip chip-section">Academic Specification</span>
+            </div>
+            <p class="dossier-text">
+              Allocating examination seating for universities handling hundreds or thousands of students is a complex combinatorial problem that is traditionally prone to human error, administrative bottlenecks, and academic integrity risks. This project presents an automated, AI-driven Intelligent University Exam Hall Seating Allocator modeled as a Constraint Satisfaction Problem (CSP) and solved via Backtracking Search with Domain Pruning and Variable Ordering.
+            </p>
+            <p class="dossier-text">
+              The system ingests student rosters, prioritizes hard accessibility constraints (ADA compliance), and enforces an anti-cheating isolation rule by preventing students of the same degree section or the same course paper from occupying orthogonally adjacent seats (|Δrow| + |Δcol| = 1). Designed and implemented in Python and deployed as a responsive web platform, the system processes and validates a multi-room seating allocation for 50 students across three examination halls, demonstrating correct, repeatable results and strict adherence to institutional academic standards.
+            </p>
+          </div>
+
+          <!-- Section 1: Introduction -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>1.</span> Introduction</h3>
+              <span class="chip chip-course">Problem & Objectives</span>
+            </div>
+            <p class="dossier-text">
+              The purpose of this project proposal document is to establish the design, architectural framework, and implementation blueprint for an automated exam hall seating allocation system. In modern universities, academic scheduling and invigilation planning require careful attention to physical constraints, institutional capacities, and academic honesty. Traditional manual seating arrangements are tedious, error-prone, and inefficient, and they often fail to detect section clusters or students sitting the same paper side by side. Furthermore, failing to accommodate students with physical impairments violates accessibility expectations.
+            </p>
+            <p class="dossier-text">
+              This software addresses the real-world problem of examination hall cheating vulnerabilities and accessibility oversights by replacing manual allocation with an automated AI approach. By formalizing seating arrangement as a constraint satisfaction problem, the system guarantees that no two students taking the same course paper, or belonging to the same degree section, sit directly next to each other (left, right, front or back). Through this development, key technical skills are acquired, including algorithmic problem modeling, state-space search, backtracking recursion, constraint checking, and structured data handling using Python and modern full-stack web technologies.
+            </p>
+          </div>
+
+          <!-- Section 2: Proposed System & Mathematical Formulation -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>2.</span> Proposed System & Mathematical Formulation</h3>
+              <span class="chip chip-section">CSP &lang;X, D, C&rang;</span>
+            </div>
+            <p class="dossier-text">
+              The proposed system addresses the complexities of institutional examination seating by applying core artificial intelligence and search techniques covered in coursework. Instead of relying on manual sorting, the application models the exam hall layout as a formal Constraint Satisfaction Problem (CSP):
+            </p>
+            
+            <div class="csp-math-box">
+              <div><strong>Variables (X):</strong> 50 Examination Candidates {X₁, X₂, ..., X₅₀}, with ADA candidates prioritized first.</div>
+              <div><strong>Domains (D):</strong> 75 Physical Desks across Hall A (25), Hall B (25), and Hall C (25). Each seat defined as {Hall_X-RrCc, row, col, ada_compliant}.</div>
+              <div><strong>Hard Constraint (C₁):</strong> ADA Accessibility &rarr; If student.ada_needed = True &rArr; seat.ada_compliant = True (Ground floor, Row 1 of accessible hall).</div>
+              <div><strong>Anti-Cheating Soft/Hard Constraint (C₂):</strong> Orthogonal Adjacency Isolation &rarr; In the same room, for any two desks where |r₁ - r₂| + |c₁ - c₂| = 1:</div>
+              <div style="padding-left: 1.5rem; color: #fbbf24;">&bull; student_A.section &ne; student_B.section</div>
+              <div style="padding-left: 1.5rem; color: #fbbf24;">&bull; student_A.course_code &ne; student_B.course_code</div>
+              <div><strong>Uniqueness Constraint (C₃):</strong> Each candidate allocated to exactly one unique physical seat without collision.</div>
+            </div>
+
+            <p class="dossier-text">
+              The backtracking engine recursively searches the state space: assign candidate &rarr; verify is_safe() &rarr; recurse &rarr; if dead-end reached, undo assignment and explore next branch.
+            </p>
+          </div>
+
+          <!-- Section 3: Advantages & Benefits -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>3.</span> Advantages & Benefits of Proposed System</h3>
+              <span class="chip chip-course">Measurable Impact</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+              <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid #10b981;">
+                <strong>1. Elimination of Human Error:</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Automates seating generation, completely removing manual calculation mistakes and double bookings.</p>
+              </div>
+              <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid #06b6d4;">
+                <strong>2. Enhanced Academic Integrity:</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Enforces orthogonal isolation for identical degree sections and course papers, preventing in-exam communication.</p>
+              </div>
+              <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid #fbbf24;">
+                <strong>3. Guaranteed ADA Accessibility:</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Places students with documented mobility needs first and exclusively in ground-floor row-1 accessible desks.</p>
+              </div>
+              <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid #818cf8;">
+                <strong>4. Sub-Second Real-Time Execution:</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Produces a fully verified multi-room layout for dozens of students in a fraction of a second (under 5 milliseconds).</p>
+              </div>
+              <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid #ec4899;">
+                <strong>5. Scalable Multi-Room Layout:</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Supports any number of halls with custom row and column dimensions, floor levels, and accessibility flags.</p>
+              </div>
+              <div style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border-left: 3px solid #34d399;">
+                <strong>6. Actionable Tabular & Print Reports:</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Generates clean sorted seating tables, CSV exports, and official invigilation charts ready for distribution.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Scope -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>4.</span> Scope & System Boundaries</h3>
+              <span class="chip chip-section">Project Bounds</span>
+            </div>
+            <p class="dossier-text">
+              The scope of this project covers the design, implementation, and evaluation of an automated Python and Web-based Constraint Satisfaction Problem solver tailored to university examination seating. The system takes a student roster containing student identifiers, names, degree sections, course codes, and ADA accommodation flags. It manages multiple halls with configurable row and column dimensions, runs a backtracking search with strict orthogonal adjacency separation, and prints a formatted allocation report.
+            </p>
+            <p class="dossier-text">
+              <strong>Boundaries:</strong> The system handles spatial isolation, room capacities, and accessibility rules. It does not perform optical character recognition (OCR) student card scanning, real-time biometric attendance tracking, or faculty invigilation duty rostering. These external administrative modules fall outside the current project scope.
+            </p>
+          </div>
+
+          <!-- Section 5: The 4 Functional Modules -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>5.</span> Functional Project Modules (Implementation Mapping)</h3>
+              <span class="chip chip-course">Architecture</span>
+            </div>
+
+            <div class="module-showcase-grid">
+              <div class="module-card">
+                <div class="module-card-header">
+                  <span class="module-num-pill">MODULE 1</span>
+                  <span style="font-size: 1.2rem;">📥</span>
+                </div>
+                <h4 style="font-weight: 700; color: #fff;">Data Ingestion & Preprocessing</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                  Loads and formats student rosters. Splits students into priority ADA queue and standard queue. Built with Pandas DataFrame and synthetic reproducible generator (seed 42).
+                </p>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; margin-top: auto;" onclick="document.getElementById('tab-btn-roster').click()">
+                  View Roster Ingestion &rarr;
+                </button>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card-header">
+                  <span class="module-num-pill">MODULE 2</span>
+                  <span style="font-size: 1.2rem;">⚙️</span>
+                </div>
+                <h4 style="font-weight: 700; color: #fff;">CSP Solver & Constraint Engine</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                  The core intelligence executing recursive backtracking search, domain pruning, and constraint validation (is_safe) enforcing hard ADA and anti-cheating orthogonal rules.
+                </p>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; margin-top: auto;" onclick="document.getElementById('tab-btn-studio').click()">
+                  View Solver Studio &rarr;
+                </button>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card-header">
+                  <span class="module-num-pill">MODULE 3</span>
+                  <span style="font-size: 1.2rem;">🏢</span>
+                </div>
+                <h4 style="font-weight: 700; color: #fff;">Room & Infrastructure Manager</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                  Models physical examination halls: dimensions (rows &times; cols), capacities, ground floor accessibility, and generates global available seat pool.
+                </p>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; margin-top: auto;" onclick="document.getElementById('tab-btn-config').click()">
+                  Configure Infrastructure &rarr;
+                </button>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card-header">
+                  <span class="module-num-pill">MODULE 4</span>
+                  <span style="font-size: 1.2rem;">📊</span>
+                </div>
+                <h4 style="font-weight: 700; color: #fff;">Visualization & Export Suite</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                  Renders interactive 2D floor plans, orthogonal neighbor radar, audit matrices, CSV downloads, and formal invigilation sheets for exam supervisors.
+                </p>
+                <button class="btn btn-secondary" style="font-size: 0.75rem; margin-top: auto;" onclick="document.getElementById('tab-btn-print').click()">
+                  View Print Suite &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 6: System Limitations -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>6.</span> System Limitations / Constraints</h3>
+              <span class="chip chip-section">Technical Boundaries</span>
+            </div>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.8; color: var(--text-muted);">
+              <li>The system assumes static room grid layouts with uniform row and column dimensions per examination hall.</li>
+              <li>ADA seats are designated to row 1 of accessible halls. Hall A row 1 has 5 seats, which accommodates up to 5 ADA students in the baseline scenario.</li>
+              <li>Backtracking search without heuristics can experience exponential runtime in dense, over-constrained cases where seats equal students. Providing 75 seats for 50 candidates keeps runtime optimal (&lt;5ms).</li>
+            </ul>
+          </div>
+
+          <!-- Section 7: Tools and Technologies Table -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>7.</span> Tools and Technologies (Table 1)</h3>
+              <span class="chip chip-course">Stack Specifications</span>
+            </div>
+            <table class="tech-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Tool / Technology</th>
+                  <th>Version</th>
+                  <th>Rationale</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>IDE</strong></td>
+                  <td>Visual Studio Code / Antigravity IDE</td>
+                  <td>Latest</td>
+                  <td>Lightweight, robust code editing, running, and debugging environment.</td>
+                </tr>
+                <tr>
+                  <td><strong>Programming Language</strong></td>
+                  <td>Python</td>
+                  <td>3.11+ / 3.14</td>
+                  <td>Core language for implementing object-oriented CSP solver (`Mid.py`) and server.</td>
+                </tr>
+                <tr>
+                  <td><strong>Data Processing Library</strong></td>
+                  <td>Pandas</td>
+                  <td>2.0+</td>
+                  <td>Holds student roster as a DataFrame and produces tabular seating report.</td>
+                </tr>
+                <tr>
+                  <td><strong>Randomization Utility</strong></td>
+                  <td>random (Python Standard Library)</td>
+                  <td>Built-in</td>
+                  <td>Generates reproducible synthetic dataset of 50 students (fixed seed 42).</td>
+                </tr>
+                <tr>
+                  <td><strong>Frontend & Visualizer</strong></td>
+                  <td>HTML5, Vanilla CSS3, Modern ES6+ JS</td>
+                  <td>Standard</td>
+                  <td>Interactive visual floor plans, neighbor conflict radar, and print stylesheets.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Section 8: Conclusion & References -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>8.</span> Conclusion & <span>9.</span> References</h3>
+              <span class="chip chip-section">Summary</span>
+            </div>
+            <p class="dossier-text">
+              The Intelligent University Exam Hall Seating Allocator demonstrates the practical application of Artificial Intelligence principles to an institutional scheduling problem. By formulating seat allocation as a Constraint Satisfaction Problem solved through recursive backtracking search, the system removes manual administrative effort while enforcing accessibility placement and anti-cheating isolation. The project provides a scalable, extensible foundation for university examination cells.
+            </p>
+            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); font-size: 0.85rem; color: var(--text-dim); line-height: 1.8;">
+              <div>[1] Stuart Russell and Peter Norvig, <em>Artificial Intelligence: A Modern Approach (4th Edition)</em>, Pearson, 2020.</div>
+              <div>[2] COMSATS University Islamabad, <em>CSC262 Artificial Intelligence Lab Manual and Guidelines</em>, Fall 2026.</div>
+              <div>[3] Python Software Foundation, <em>Pandas Documentation: Data Structures and Ingestion Utilities</em>, 2026.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Seat Inspector Modal -->
+    <div class="seat-inspector-modal" id="modal-seat-inspector" role="dialog" aria-modal="true" aria-labelledby="modal-seat-title">
+      <div class="inspector-card">
+        <div class="inspector-header">
+          <h3 id="modal-seat-title" style="font-family: var(--font-heading); font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>💺</span> Seat Details & Neighbor Radar
+          </h3>
+          <button class="btn-icon" id="btn-close-seat-modal" aria-label="Close modal">✕</button>
+        </div>
+        <div class="inspector-body">
+          <div id="inspector-student-details">
+            <!-- Student info -->
+          </div>
+
+          <div>
+            <h4 style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+              Orthogonal Adjacency Verification (|Δr| + |Δc| = 1)
+            </h4>
+            <div class="radar-neighbors-list" id="inspector-neighbors-list">
+              <!-- Adjacent neighbors -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Student Modal -->
+    <div class="seat-inspector-modal" id="modal-student-form" role="dialog" aria-modal="true">
+      <div class="inspector-card">
+        <div class="inspector-header">
+          <h3 style="font-family: var(--font-heading); font-size: 1.15rem;">➕ Add Student to Roster</h3>
+          <button class="btn-icon" id="btn-close-student-modal">✕</button>
+        </div>
+        <div class="inspector-body">
+          <form id="form-new-student" onsubmit="event.preventDefault();">
+            <div class="control-field" style="margin-bottom: 0.8rem;">
+              <label class="field-label" for="input-new-id">Student Roll Number / ID</label>
+              <input type="text" id="input-new-id" class="text-input" placeholder="e.g. SP25-BDS-051" required>
+            </div>
+            <div class="control-field" style="margin-bottom: 0.8rem;">
+              <label class="field-label" for="input-new-name">Full Student Name</label>
+              <input type="text" id="input-new-name" class="text-input" placeholder="e.g. Tariq Mehmood" required>
+            </div>
+            <div class="control-field" style="margin-bottom: 0.8rem;">
+              <label class="field-label" for="select-new-section">Degree Section</label>
+              <select id="select-new-section" class="select-input">
+                <option value="BDS-3A">BDS-3A</option>
+                <option value="BDS-3B">BDS-3B</option>
+                <option value="BDS-3C">BDS-3C</option>
+              </select>
+            </div>
+            <div class="control-field" style="margin-bottom: 0.8rem;">
+              <label class="field-label" for="select-new-course">Exam Course Paper</label>
+              <select id="select-new-course" class="select-input">
+                <option value="CSC262">CSC262 (Artificial Intelligence)</option>
+                <option value="MTH231">MTH231 (Linear Algebra)</option>
+                <option value="DSF201">DSF201 (Data Structures)</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+              <input type="checkbox" id="check-new-ada" style="width: 18px; height: 18px; accent-color: var(--primary);">
+              <label for="check-new-ada" style="font-size: 0.85rem; font-weight: 500;">
+                Requires Wheelchair / Mobility ADA Ground Floor Seating
+              </label>
+            </div>
+            <button type="submit" id="btn-submit-student" class="btn btn-primary" style="width: 100%;">
+              Save Student & Update Roster
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Area -->
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="data.js"></script>
+  <script src="csp_engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
