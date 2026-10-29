@@ -95,6 +95,9 @@
       <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tab-halls" id="tab-btn-halls">
         <span>🏛️</span> Interactive Exam Halls
       </button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-agent" id="tab-btn-agent">
+        <span>🤖</span> AI Agent Architecture
+      </button>
       <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-studio" id="tab-btn-studio">
         <span>⚡</span> CSP Solver Studio
       </button>
@@ -150,7 +153,173 @@
         </div>
       </section>
 
-      <!-- TAB 2: CSP Solver Studio -->
+      <!-- TAB 2: AI Agent Architecture & PEAS Formalization -->
+      <section id="tab-agent" class="tab-pane" role="tabpanel">
+        <div class="agent-header-banner">
+          <div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+              <span class="chip chip-course">CSC262: Artificial Intelligence - I</span>
+              <span class="chip chip-section">Autonomous Invigilation Supervisor</span>
+              <span class="chip" style="background: rgba(52, 211, 153, 0.15); color: #34d399; font-weight: 600;">Goal-Based & Utility-Based Agent</span>
+            </div>
+            <h2 style="font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem;">
+              Autonomous AI Exam Seating & Invigilation Agent
+            </h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 780px;">
+              Formally modeled using Russell & Norvig's Intelligent Agent Framework. The agent perceives candidate profiles and room geometries through environmental sensors, formulates goal states, applies the Most Constrained Variable (MRV) heuristic, and executes backtracking search to achieve 100% constraint satisfaction.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="btn-agent-run-solve">
+              <span>🚀</span> Run Agent Allocation
+            </button>
+            <button class="btn btn-secondary" id="btn-agent-balanced-mode">
+              <span>⚖️</span> Utility-Balanced Mode
+            </button>
+            <button class="btn btn-secondary" id="btn-agent-run-audit">
+              <span>🛡️</span> Invigilation Audit
+            </button>
+          </div>
+        </div>
+
+        <!-- PEAS Architecture Specification Grid -->
+        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🧩</span> Formal PEAS Specification Matrix
+        </h3>
+
+        <div class="agent-peas-grid">
+          <!-- Card P -->
+          <div class="agent-peas-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="peas-letter-badge p">P</span>
+              <span class="chip" style="font-size: 0.72rem; background: rgba(52, 211, 153, 0.1); color: #34d399;">Objective Metric</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.95rem;">Performance Measure</div>
+            <ul class="peas-list">
+              <li><strong>100% ADA Placement:</strong> All mobility-impaired candidates seated in Row 1 accessible zones.</li>
+              <li><strong>0% Orthogonal Violations:</strong> No adjacent candidates sharing section or exam paper (|dr|+|dc|=1).</li>
+              <li><strong>100% Completeness:</strong> Zero unseated candidates; zero duplicate assignments.</li>
+              <li><strong>Search Efficiency:</strong> Minimal state-space node expansions and backtracks.</li>
+              <li><strong>Utility Spread:</strong> Optimal balanced occupancy distribution across active halls.</li>
+            </ul>
+          </div>
+
+          <!-- Card E -->
+          <div class="agent-peas-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="peas-letter-badge e">E</span>
+              <span class="chip" style="font-size: 0.72rem; background: rgba(99, 102, 241, 0.1); color: #818cf8;">State Space</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.95rem;">Environment</div>
+            <ul class="peas-list">
+              <li><strong>Multi-Hall Grids:</strong> Physical 2D desk matrices {Hall-R{r}C{c}} across floors.</li>
+              <li><strong>Candidate Pool:</strong> Roll numbers, degree sections, exam papers, and ADA flags.</li>
+              <li><strong>Fully Observable:</strong> Agent has complete visibility over all desks and student records.</li>
+              <li><strong>Deterministic:</strong> Seat assignments produce known, predictable world states.</li>
+              <li><strong>Static & Discrete:</strong> Roster and venues remain fixed during deliberation cycles.</li>
+            </ul>
+          </div>
+
+          <!-- Card A -->
+          <div class="agent-peas-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="peas-letter-badge a">A</span>
+              <span class="chip" style="font-size: 0.72rem; background: rgba(251, 146, 60, 0.1); color: #fb923c;">Actions</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.95rem;">Actuators</div>
+            <ul class="peas-list">
+              <li><strong>Assign Desk:</strong> Maps candidate X_i &rarr; Seat_j in state allocation table.</li>
+              <li><strong>Backtrack Unwind:</strong> Restores domain values and unassigns seat upon dead-end.</li>
+              <li><strong>Integrity Certification:</strong> Emits official academic compliance certificate.</li>
+              <li><strong>Explainable AI Dispatch:</strong> Generates localized radar defense traces for invigilators.</li>
+              <li><strong>Hall Dynamic Governor:</strong> Adds, updates, or safely removes examination venues.</li>
+            </ul>
+          </div>
+
+          <!-- Card S -->
+          <div class="agent-peas-card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="peas-letter-badge s">S</span>
+              <span class="chip" style="font-size: 0.72rem; background: rgba(56, 189, 248, 0.1); color: #38bdf8;">Percepts</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.95rem;">Sensors</div>
+            <ul class="peas-list">
+              <li><strong>Hall Capacity Sensor:</strong> Detects dimensions, total desks, and floor availability.</li>
+              <li><strong>ADA Accessibility Sensor:</strong> Verifies ground-floor wheelchair ramp access.</li>
+              <li><strong>Manhattan Distance Sensor:</strong> Tests orthogonal adjacency (|dr| + |dc| == 1).</li>
+              <li><strong>Credential Comparator:</strong> Inspects section codes and exam paper codes.</li>
+              <li><strong>Telemetry Monitor:</strong> Records recursive steps, backtracks, and elapsed time.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Agent Percept-Action Cycle Flow -->
+        <h3 style="font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🔄</span> Agent Percept-Action Decision Cycle
+        </h3>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          How the Goal-Based Agent continuously perceives the environment, prunes domain spaces, and decides optimal placement actions.
+        </p>
+
+        <div class="agent-flow-container">
+          <div class="agent-flow-step">
+            <div class="agent-flow-step-num">STAGE 01</div>
+            <div class="agent-flow-step-title">Perceive & Formulate</div>
+            <div class="agent-flow-step-desc">Ingests student records and hall geometries into memory. Defines goal test Goal(s).</div>
+          </div>
+          <div class="agent-flow-step">
+            <div class="agent-flow-step-num">STAGE 02</div>
+            <div class="agent-flow-step-title">MRV Heuristic Ordering</div>
+            <div class="agent-flow-step-desc">Sorts variables. Prioritizes ADA candidates first because their domain is strictly confined to Row 1.</div>
+          </div>
+          <div class="agent-flow-step">
+            <div class="agent-flow-step-num">STAGE 03</div>
+            <div class="agent-flow-step-title">Orthogonal Isolation Filter</div>
+            <div class="agent-flow-step-desc">Evaluates Manhattan distance (|&Delta;r|+|&Delta;c|=1). Blocks candidates sharing same section or paper.</div>
+          </div>
+          <div class="agent-flow-step">
+            <div class="agent-flow-step-num">STAGE 04</div>
+            <div class="agent-flow-step-title">Backtracking Search</div>
+            <div class="agent-flow-step-desc">Recursively assigns safe desks; unwinds assignments if constraint dead-ends are reached.</div>
+          </div>
+          <div class="agent-flow-step">
+            <div class="agent-flow-step-num">STAGE 05</div>
+            <div class="agent-flow-step-title">Autonomous Audit</div>
+            <div class="agent-flow-step-desc">Invigilation Sub-Agent audits 100% of seats, certifying zero ADA or orthogonal cheating violations.</div>
+          </div>
+        </div>
+
+        <!-- Explainable AI (XAI) Invigilation Inspector -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-lg); padding: 1.5rem; margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+            <div>
+              <h3 style="font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🔍</span> Explainable AI (XAI): Agent Decision Radar & Reasoning Inspector
+              </h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">
+                Inspect the Agent's reasoning for any candidate to audit why they were placed at their desk and how the orthogonal shield prevents cheating.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label for="agent-xai-student-select" style="font-size: 0.82rem; font-weight: 600;">Inspect Candidate:</label>
+              <select id="agent-xai-student-select" class="select-input" style="min-width: 250px;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div id="agent-xai-container">
+            <div id="agent-xai-details" style="margin-bottom: 1rem; background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.85rem;">
+              <!-- Populated dynamically -->
+            </div>
+            <div class="xai-radar-grid" id="agent-xai-radar">
+              <!-- Populated dynamically with North, South, East, West neighbor evaluations -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: CSP Solver Studio -->
       <section id="tab-studio" class="tab-pane" role="tabpanel">
         <div class="studio-layout">
           <!-- Left Controls -->
@@ -421,20 +590,25 @@
 
       <!-- TAB 6: Hall & Infrastructure Config -->
       <section id="tab-config" class="tab-pane" role="tabpanel">
-        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
           <div>
             <h2 style="font-family: var(--font-heading); font-size: 1.3rem;">Examination Venues & Grid Geometry</h2>
             <p style="font-size: 0.82rem; color: var(--text-muted);">
-              Configure room capacities, row/column grid matrices, and wheelchair/ADA ground floor availability.
+              Configure room capacities, row/column grid matrices, and wheelchair/ADA ground floor availability. Safely add or remove halls with live constraint validation.
             </p>
           </div>
-          <button id="btn-add-room-card" class="btn btn-primary">
-            <span>➕</span> Add New Exam Hall
-          </button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="btn-reset-default-rooms" class="btn btn-secondary" title="Restore default Hall A, B, C">
+              <span>🔄</span> Reset Default Halls
+            </button>
+            <button id="btn-add-room-card" class="btn btn-primary">
+              <span>➕</span> Add New Exam Hall
+            </button>
+          </div>
         </div>
 
         <div class="halls-manager-grid" id="halls-config-container">
-          <!-- Dynamically populated room cards -->
+          <!-- Dynamically populated room cards with Update and Remove Hall buttons -->
         </div>
       </section>
 
@@ -546,6 +720,27 @@
 
             <p class="dossier-text">
               The backtracking engine recursively searches the state space: assign candidate &rarr; verify is_safe() &rarr; recurse &rarr; if dead-end reached, undo assignment and explore next branch.
+            </p>
+          </div>
+
+          <!-- Section 2.1: Intelligent Agent Architecture & PEAS Formalization -->
+          <div class="dossier-section-card">
+            <div class="dossier-section-header">
+              <h3 class="dossier-section-title"><span>2.1</span> Intelligent Agent Architecture & PEAS Formalization</h3>
+              <span class="chip chip-section">Russell & Norvig Framework</span>
+            </div>
+            <p class="dossier-text">
+              In accordance with classical Artificial Intelligence theory (Russell &amp; Norvig, <em>AIMA</em>), the system is classified as a <strong>Goal-Based and Utility-Based Intelligent Agent</strong> operating within a Multi-Agent Supervisory Architecture:
+            </p>
+            <div class="csp-math-box" style="margin-bottom: 1rem;">
+              <div><strong>Agent Classification:</strong> Goal-Based Agent (achieving complete assignment &land; zero constraint violations) augmented with Utility Functions (maximizing orthogonal anti-cheating distance and balancing hall occupancy).</div>
+              <div><strong>Performance Measure (P):</strong> 100% ADA compliance (ground-floor Row 1), 0% orthogonal section/paper clashes (|dr|+|dc|=1), 100% seating completeness, minimal backtracks, and balanced venue load.</div>
+              <div><strong>Environment (E):</strong> Physical exam venues {Hall-R{r}C{c}}, floor levels, and candidate profiles. Properties: Fully Observable, Deterministic, Static (during solver deliberation), Discrete.</div>
+              <div><strong>Actuators (A):</strong> Desk assignment, backtrack unwind, invigilation integrity certification, and Explainable AI (XAI) neighborhood radar dispatch.</div>
+              <div><strong>Sensors (S):</strong> Hall geometry/capacity sensor, ADA accessibility detector, Manhattan distance collision sensor (|dr|+|dc|==1), and student credential comparator.</div>
+            </div>
+            <p class="dossier-text">
+              The agent's decision-making cycle follows the standard Sense &rarr; Model State &rarr; Heuristic Prune (MRV) &rarr; Search Actuate &rarr; Audit loop, ensuring sound and complete scheduling.
             </p>
           </div>
 

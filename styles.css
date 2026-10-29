@@ -1906,4 +1906,155 @@ body {
   }
 }
 
+/* ==========================================================================
+   AI AGENT ARCHITECTURE & PEAS MATRIX STYLING
+   ========================================================================== */
+.agent-header-banner {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.agent-peas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.agent-peas-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.agent-peas-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.peas-letter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-size: 1.1rem;
+  font-family: var(--font-heading);
+}
+
+.peas-letter-badge.p { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+.peas-letter-badge.e { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+.peas-letter-badge.a { background: rgba(251, 146, 60, 0.15); color: #fb923c; }
+.peas-letter-badge.s { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+
+.peas-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.peas-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.peas-list li::before {
+  content: "•";
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.agent-flow-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.agent-flow-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+  position: relative;
+}
+
+.agent-flow-step-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.agent-flow-step-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.agent-flow-step-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.xai-radar-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.xai-radar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.xai-radar-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.xai-radar-card.safe {
+  border-left: 3px solid #34d399;
+}
+
+.xai-radar-card.boundary {
+  border-left: 3px solid #94a3b8;
+}
+
+.xai-radar-card.clash {
+  border-left: 3px solid #f43f5e;
+}
+
+
 

@@ -1,31 +1,90 @@
 /**
- * Intelligent University Exam Hall Seating Allocator - CSP Solver Engine
+ * Intelligent University Exam Hall Seating Allocator - AI CSP Agent Engine
  * CSC262: Artificial Intelligence - I (COMSATS University Islamabad)
  * 
- * Formalization as a Constraint Satisfaction Problem (CSP):
- * - Variables (X): Ordered list of students (ADA students prioritized first).
- * - Domains (D): Available physical seats {Hall_X-RrCc} across all configured exam halls.
- * - Constraints (C):
- *     1. Hard Constraint (ADA Compliance): ADA-flagged students must be assigned
- *        exclusively to ADA-compliant seats (ground floor / row 1 of accessible halls).
- *     2. Anti-Cheating Isolation Rule (Soft/Orthogonal Constraint):
- *        No two students sharing the same degree section OR the same course code may sit
- *        in orthogonally adjacent desks (|dr| + |dc| == 1 in the same room).
- *     3. Uniqueness: Each seat may hold at most one student.
+ * AI AGENT ARCHITECTURE & PEAS FORMALIZATION:
+ * =============================================================================
+ * 1. Agent Classification:
+ *    - Goal-Based & Utility-Based Intelligent Agent.
+ *    - Operates as an Autonomous Invigilation Supervisor for university examinations.
+ *    - Solves a Constraint Satisfaction Problem (CSP) using Backtracking Search
+ *      with Domain Pruning & Most Constrained Variable (MRV) Ordering.
+ * 
+ * 2. PEAS Specification:
+ *    - Performance Measure (P):
+ *      * 100% Hard Accessibility Constraint Satisfaction (ADA students placed exclusively
+ *        in Row 1 of accessible ground floor halls).
+ *      * 0% Soft Orthogonal Anti-Cheating Violations (|dr|+|dc| == 1 in same venue with same
+ *        course code or same degree section).
+ *      * 100% Seating Completeness (all active roster candidates assigned unique desks).
+ *      * Search Efficiency (minimal state-space backtracks & node expansions).
+ *      * Optimized Venue Occupancy Spread (Utility-based load balancing).
+ *    - Environment (E):
+ *      * Examination venues with 2D geometric matrices {Hall-R{r}C{c}}, floor levels,
+ *        and wheelchair accessibility flags.
+ *      * Student candidate pool characterized by {student_id, name, section, course_code, ada_needed}.
+ *      * Environment Properties: Fully Observable, Deterministic, Static (during solver deliberation),
+ *        Discrete, Multi-Agent Supervisory Architecture.
+ *    - Actuators (A):
+ *      * Desk Assignment: allocation[seat_id] <- student
+ *      * Backtrack Unwind: delete allocation[seat_id]
+ *      * Autonomous Invigilation Academic Integrity Certification
+ *      * Explainable AI (XAI) Invigilation Boundary Trace
+ *    - Sensors (S):
+ *      * Hall Capacity & Coordinate Sensor (detects room dimensions & desk availability).
+ *      * ADA Ground Floor Accessibility Sensor (detects row 1 accessibility compliance).
+ *      * Manhattan Orthogonal Proximity Collision Detector (|dr|+|dc| == 1).
+ *      * Candidate Credential Comparator (verifies course codes and academic sections).
+ * =============================================================================
  */
 
-class CSPExamSeatingAllocator {
+class IntelligentExamSeatingAgent {
+  static PEAS = {
+    agentType: 'Goal-Based & Utility-Based Intelligent CSP Agent',
+    environmentProperties: {
+      observability: 'Fully Observable',
+      determinism: 'Deterministic',
+      dynamism: 'Static (during solver deliberation)',
+      continuity: 'Discrete',
+      agents: 'Multi-Agent Supervisory Architecture'
+    },
+    performance: [
+      '100% ADA Candidate Placement (Ground floor Row 1 accessible seats)',
+      '0% Orthogonal Adjacency Violations (|dr|+|dc| = 1 anti-cheating rule)',
+      '100% Seating Completeness (all active roster candidates assigned unique desks)',
+      'Search Efficiency (minimal state-space backtracks & node expansions)',
+      'Optimized Hall Occupancy Distribution'
+    ],
+    environment: [
+      'Examination venues with 2D geometric matrices {Hall-R{r}C{c}}',
+      'Physical hall metadata: floor levels, capacities, and wheelchair accessibility',
+      'Candidate pool characterized by {student_id, name, section, course_code, ada_needed}'
+    ],
+    actuators: [
+      'Desk Assignment: allocation[seat_id] <- student',
+      'Backtrack Unwind: delete allocation[seat_id]',
+      'Invigilation Academic Integrity Certification',
+      'Explainable AI (XAI) Invigilation Boundary Trace'
+    ],
+    sensors: [
+      'Hall Capacity & Coordinate Sensor',
+      'ADA Ground Floor Accessibility Sensor',
+      'Manhattan Orthogonal Proximity Collision Detector (|dr|+|dc| == 1)',
+      'Student Degree Section & Course Paper Comparator'
+    ]
+  };
+
   constructor(students, rooms, options = {}) {
-    // Clone inputs to avoid external mutation
+    this.agentMode = options.mode || 'baseline'; // 'baseline', 'balanced', 'mrv'
+    this.options = { ...options };
+
+    // Agent internal memory / percept buffers
     this.students = JSON.parse(JSON.stringify(students));
     this.rooms = JSON.parse(JSON.stringify(rooms));
-    this.options = {
-      mode: options.mode || 'baseline', // 'baseline', 'balanced', 'mrv'
-      ...options
-    };
-
     this.allocation = {}; // Map of seat_id -> student_record
     this.studentToSeat = {}; // Map of student_id -> seat_id
+
+    // Performance telemetry
     this.stats = {
       steps: 0,
       backtracks: 0,
@@ -37,13 +96,38 @@ class CSPExamSeatingAllocator {
   }
 
   /**
+   * Sensor Phase: Ingests environment percepts and refreshes internal representations.
+   */
+  perceive(students, rooms) {
+    this.students = JSON.parse(JSON.stringify(students));
+    this.rooms = JSON.parse(JSON.stringify(rooms));
+    this.allocation = {};
+    this.studentToSeat = {};
+  }
+
+  /**
+   * Goal Formulation:
+   * Goal State = Complete conflict-free mapping of students to desks.
+   */
+  formulateGoal() {
+    const totalCapacity = Object.values(this.rooms).reduce((acc, r) => acc + (r.rows * r.cols), 0);
+    return {
+      totalStudentsToSeat: this.students.length,
+      totalCapacityAvailable: totalCapacity,
+      adaCandidatesCount: this.students.filter(s => s.ada_needed).length,
+      targetViolations: 0,
+      isSolvableByCapacity: totalCapacity >= this.students.length
+    };
+  }
+
+  /**
    * Generates seat domain across all rooms
    */
   buildSeatPool() {
     const availableSeats = [];
     const roomKeys = Object.keys(this.rooms);
 
-    if (this.options.mode === 'balanced') {
+    if (this.agentMode === 'balanced') {
       // Round-robin interleave rows across rooms to balance occupancy
       let maxRows = Math.max(...roomKeys.map(k => this.rooms[k].rows));
       for (let r = 0; r < maxRows; r++) {
@@ -64,7 +148,7 @@ class CSPExamSeatingAllocator {
         }
       }
     } else {
-      // Standard baseline ordering exactly as in Mid.py
+      // Standard baseline ordering matching Mid.py
       for (const [roomName, rInfo] of Object.entries(this.rooms)) {
         for (let r = 0; r < rInfo.rows; r++) {
           for (let c = 0; c < rInfo.cols; c++) {
@@ -74,7 +158,7 @@ class CSPExamSeatingAllocator {
               room: roomName,
               row: r + 1,
               col: c + 1,
-              // ADA students prefer ground floor / row 1 of accessible rooms
+              // ADA candidates prefer ground floor / row 1 of accessible rooms
               ada_compliant: Boolean(rInfo.ada_accessible && r === 0)
             });
           }
@@ -305,8 +389,68 @@ class CSPExamSeatingAllocator {
   }
 
   /**
-   * Comprehensive Academic Integrity & Constraint Audit
-   * Validates any allocation against all rules
+   * Explainable AI (XAI) Invigilation Report
+   * Explains why the agent assigned a candidate to a specific desk
+   */
+  explainAssignment(studentId) {
+    const seatId = Object.keys(this.allocation).find(sid => this.allocation[sid].student_id === studentId);
+    if (!seatId) {
+      return { found: false, message: `Candidate ${studentId} is not assigned to any desk.` };
+    }
+
+    const studentRecord = this.allocation[seatId];
+    const room = studentRecord.room;
+    const r = studentRecord.row;
+    const c = studentRecord.col;
+
+    const neighbors = [
+      { direction: 'North', seatId: `${room}-R${r - 1}C${c}` },
+      { direction: 'South', seatId: `${room}-R${r + 1}C${c}` },
+      { direction: 'West', seatId: `${room}-R${r}C${c - 1}` },
+      { direction: 'East', seatId: `${room}-R${r}C${c + 1}` }
+    ];
+
+    const radar = neighbors.map(n => {
+      const occupant = this.allocation[n.seatId] || null;
+      if (!occupant) {
+        return {
+          direction: n.direction,
+          seatId: n.seatId,
+          status: 'EMPTY',
+          safe: true,
+          details: 'Empty desk or boundary aisle'
+        };
+      }
+      const sameSection = occupant.section === studentRecord.section;
+      const sameCourse = occupant.course_code === studentRecord.course_code;
+      const safe = !sameSection && !sameCourse;
+
+      return {
+        direction: n.direction,
+        seatId: n.seatId,
+        occupant,
+        sameSection,
+        sameCourse,
+        safe,
+        details: safe
+          ? `Safe: Diff Section (${occupant.section}) & Diff Course (${occupant.course_code})`
+          : `CLASH: ${sameSection ? 'Same Section ' : ''}${sameCourse ? 'Same Course' : ''}`
+      };
+    });
+
+    return {
+      found: true,
+      seatId,
+      student: studentRecord,
+      adaStrategy: studentRecord.ada_needed
+        ? 'Assigned to reserved accessible Row 1 zone.'
+        : 'Assigned to standard desk.',
+      radar
+    };
+  }
+
+  /**
+   * Comprehensive Academic Integrity & Constraint Audit (Autonomous Invigilation Sub-Agent)
    */
   static auditAllocation(allocation, students, rooms) {
     const results = {
@@ -425,4 +569,17 @@ class CSPExamSeatingAllocator {
 
     return results;
   }
+}
+
+// Ensure 100% backward compatibility
+class CSPExamSeatingAllocator extends IntelligentExamSeatingAgent {}
+
+// Expose globally
+if (typeof window !== 'undefined') {
+  window.IntelligentExamSeatingAgent = IntelligentExamSeatingAgent;
+  window.CSPExamSeatingAllocator = CSPExamSeatingAllocator;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { IntelligentExamSeatingAgent, CSPExamSeatingAllocator };
 }

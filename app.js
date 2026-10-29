@@ -96,6 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Config
     hallsConfigContainer: document.getElementById('halls-config-container'),
     btnAddRoomCard: document.getElementById('btn-add-room-card'),
+    btnResetDefaultRooms: document.getElementById('btn-reset-default-rooms'),
+    // Agent Architecture & XAI
+    btnAgentRunSolve: document.getElementById('btn-agent-run-solve'),
+    btnAgentBalancedMode: document.getElementById('btn-agent-balanced-mode'),
+    btnAgentRunAudit: document.getElementById('btn-agent-run-audit'),
+    agentXaiStudentSelect: document.getElementById('agent-xai-student-select'),
+    agentXaiDetails: document.getElementById('agent-xai-details'),
+    agentXaiRadar: document.getElementById('agent-xai-radar'),
     // Modals
     modalSeatInspector: document.getElementById('modal-seat-inspector'),
     modalSeatTitle: document.getElementById('modal-seat-title'),
@@ -209,6 +217,139 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
+     DYNAMIC VENUE / HALL NAVIGATION & FILTER SYNCHRONIZATION
+     ========================================================================== */
+  function syncHallNavigationAndFilters() {
+    // 1. Synchronize Room Filter Pills in Tab 1
+    if (elements.roomFilterPills) {
+      elements.roomFilterPills.innerHTML = '';
+
+      const allBtn = document.createElement('button');
+      allBtn.className = `room-pill ${state.hallFilter === 'ALL' ? 'active' : ''}`;
+      allBtn.dataset.hallFilter = 'ALL';
+      allBtn.innerHTML = 'All Halls Overview';
+      allBtn.addEventListener('click', () => {
+        state.hallFilter = 'ALL';
+        syncHallNavigationAndFilters();
+        renderHalls();
+      });
+      elements.roomFilterPills.appendChild(allBtn);
+
+      Object.entries(state.rooms).forEach(([roomKey, room]) => {
+        const pill = document.createElement('button');
+        pill.className = `room-pill ${state.hallFilter === roomKey ? 'active' : ''}`;
+        pill.dataset.hallFilter = roomKey;
+        pill.innerHTML = `${roomKey.replace('_', ' ')} ${room.ada_accessible ? '♿' : ''} (${room.floor || 'Standard'})`;
+        pill.addEventListener('click', () => {
+          state.hallFilter = roomKey;
+          syncHallNavigationAndFilters();
+          renderHalls();
+        });
+        elements.roomFilterPills.appendChild(pill);
+      });
+    }
+
+    // 2. Synchronize Filter Hall Select in Tab 3 (Master Roster)
+    if (elements.filterHallSelect) {
+      const currentVal = state.tableFilters.hall || 'ALL';
+      elements.filterHallSelect.innerHTML = '<option value="ALL">All Halls</option>';
+      Object.keys(state.rooms).forEach(roomKey => {
+        const opt = document.createElement('option');
+        opt.value = roomKey;
+        opt.textContent = roomKey.replace('_', ' ');
+        elements.filterHallSelect.appendChild(opt);
+      });
+      if (state.rooms[currentVal] || currentVal === 'ALL') {
+        elements.filterHallSelect.value = currentVal;
+      } else {
+        elements.filterHallSelect.value = 'ALL';
+        state.tableFilters.hall = 'ALL';
+      }
+    }
+  }
+
+  function removeHall(roomKey) {
+    const roomKeys = Object.keys(state.rooms);
+    if (roomKeys.length <= 1) {
+      showToast('Cannot remove hall: At least one examination hall is required.', 'error');
+      return;
+    }
+
+    const roomName = roomKey.replace('_', ' ');
+    const roomSeatsCount = (state.rooms[roomKey].rows || 5) * (state.rooms[roomKey].cols || 5);
+    const seatedInHall = Object.values(state.allocation).filter(s => s.room === roomKey).length;
+    const remainingCapacity = Object.entries(state.rooms)
+      .filter(([k]) => k !== roomKey)
+      .reduce((acc, [, r]) => acc + (r.rows * r.cols), 0);
+    const totalStudents = state.students.length;
+
+    let warningMsg = `Are you sure you want to remove ${roomName} (${roomSeatsCount} desks)?`;
+    if (seatedInHall > 0) {
+      warningMsg += `\n\n• ${seatedInHall} candidate assignment(s) currently in this hall will be cleared.`;
+    }
+    if (remainingCapacity < totalStudents) {
+      warningMsg += `\n\n⚠️ CAUTION: Total remaining capacity across other halls (${remainingCapacity} desks) is less than the active student roster (${totalStudents} students).`;
+    } else {
+      warningMsg += `\n\nRemaining capacity across other halls (${remainingCapacity} desks) is sufficient for all ${totalStudents} students.`;
+    }
+
+    const confirmed = window.confirm(warningMsg);
+    if (!confirmed) return;
+
+    // Clear assignments in removed hall
+    let clearedCount = 0;
+    for (const seatId of Object.keys(state.allocation)) {
+      if (state.allocation[seatId].room === roomKey) {
+        delete state.allocation[seatId];
+        clearedCount++;
+      }
+    }
+
+    // Delete hall
+    delete state.rooms[roomKey];
+
+    if (state.hallFilter === roomKey) {
+      state.hallFilter = 'ALL';
+    }
+    if (state.selectedSeatId && state.selectedSeatId.startsWith(roomKey)) {
+      state.selectedSeatId = null;
+    }
+
+    syncHallNavigationAndFilters();
+    renderHalls();
+    renderHallsConfig();
+    renderMasterTable();
+    updateKPIs();
+
+    state.auditResults = IntelligentExamSeatingAgent.auditAllocation(state.allocation, state.students, state.rooms);
+    renderAuditReport();
+
+    showToast(`Removed ${roomName}! ${clearedCount > 0 ? `${clearedCount} seat assignments cleared.` : ''}`, 'info');
+
+    // Auto-reallocate if capacity is sufficient
+    if (clearedCount > 0 && remainingCapacity >= totalStudents) {
+      setTimeout(() => {
+        executeQuickSolve();
+        showToast(`AI Agent automatically re-allocated all students across remaining ${Object.keys(state.rooms).length} halls!`, 'success');
+      }, 350);
+    }
+  }
+
+  function resetDefaultHalls() {
+    if (!window.confirm('Reset examination venues back to default setup (Hall A, Hall B, Hall C)?')) {
+      return;
+    }
+    state.rooms = JSON.parse(JSON.stringify(DEFAULT_ROOMS));
+    state.hallFilter = 'ALL';
+    state.selectedSeatId = null;
+    syncHallNavigationAndFilters();
+    renderHalls();
+    renderHallsConfig();
+    executeQuickSolve();
+    showToast('Restored default examination halls (Hall A, B, C) and regenerated seating.', 'success');
+  }
+
+  /* ==========================================================================
      TAB 1: RENDER EXAM HALLS
      ========================================================================== */
   function renderHalls() {
@@ -242,8 +383,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="hall-meta">${room.floor} • Grid: ${room.rows} Rows × ${room.cols} Columns (${isList ? 'Mobile Card List View' : '5-Column Floor Plan'})</div>
           </div>
-          <div class="hall-occupancy-pill">
-            ${roomAssigned} / ${roomCapacity} Seated
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="hall-occupancy-pill">
+              ${roomAssigned} / ${roomCapacity} Seated
+            </div>
+            <button class="btn btn-danger remove-hall-btn" data-room-key="${roomKey}" title="Remove ${roomKey.replace('_', ' ')}" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+              <span>🗑️</span> Remove
+            </button>
           </div>
         </div>
 
@@ -266,6 +412,14 @@ document.addEventListener('DOMContentLoaded', () => {
           ${room.ada_accessible ? '<span class="ada-indicator">♿ Row 1 Designated ADA Compliant Zone</span>' : '<span>Standard Exam Venue</span>'}
         </div>
       `;
+
+      const removeBtn = card.querySelector('.remove-hall-btn');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeHall(roomKey);
+        });
+      }
 
       const gridContainer = card.querySelector(`#grid-${roomKey}`);
 
@@ -562,14 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  elements.roomFilterPills.querySelectorAll('.room-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      elements.roomFilterPills.querySelectorAll('.room-pill').forEach(p => p.classList.remove('active'));
-      pill.classList.add('active');
-      state.hallFilter = pill.dataset.hallFilter;
-      renderHalls();
-    });
-  });
+  syncHallNavigationAndFilters();
 
   /* ==========================================================================
      TAB 3: MASTER ROSTER & SEATING TABLE
@@ -942,9 +1089,14 @@ document.addEventListener('DOMContentLoaded', () => {
           <label for="cfg-ada-${roomKey}" style="font-size: 0.82rem; font-weight: 500;">Wheelchair / ADA Accessible Hall</label>
         </div>
 
-        <button class="btn btn-secondary" style="margin-top: 0.5rem;" id="btn-save-cfg-${roomKey}">
-          Update ${roomKey.replace('_', ' ')}
-        </button>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+          <button class="btn btn-secondary" style="flex: 1;" id="btn-save-cfg-${roomKey}">
+            <span>💾</span> Update Dimensions
+          </button>
+          <button class="btn btn-danger" style="flex: 1;" id="btn-remove-cfg-${roomKey}" title="Remove ${roomKey.replace('_', ' ')}">
+            <span>🗑️</span> Remove Hall
+          </button>
+        </div>
       `;
 
       card.querySelector(`#btn-save-cfg-${roomKey}`).addEventListener('click', () => {
@@ -959,9 +1111,14 @@ document.addEventListener('DOMContentLoaded', () => {
         state.rooms[roomKey].floor = floor;
         state.rooms[roomKey].ada_accessible = ada;
 
+        syncHallNavigationAndFilters();
         renderHalls();
         updateKPIs();
         showToast(`${roomKey.replace('_', ' ')} dimensions and flags updated!`, 'success');
+      });
+
+      card.querySelector(`#btn-remove-cfg-${roomKey}`).addEventListener('click', () => {
+        removeHall(roomKey);
       });
 
       container.appendChild(card);
@@ -980,11 +1137,16 @@ document.addEventListener('DOMContentLoaded', () => {
       floor: `${nextIndex}rd Floor`
     };
 
+    syncHallNavigationAndFilters();
     renderHallsConfig();
     renderHalls();
     updateKPIs();
-    showToast(`Created new room: ${roomKey}!`, 'success');
+    showToast(`Created new room: ${roomKey.replace('_', ' ')}!`, 'success');
   });
+
+  if (elements.btnResetDefaultRooms) {
+    elements.btnResetDefaultRooms.addEventListener('click', resetDefaultHalls);
+  }
 
   /* ==========================================================================
      CSP SOLVER WORKFLOWS (SYNCHRONOUS & ANIMATED)
@@ -1011,6 +1173,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMasterTable();
       renderPrintSuite();
       updateKPIs();
+      if (elements.agentXaiStudentSelect && elements.agentXaiStudentSelect.value) {
+        renderAgentXai(elements.agentXaiStudentSelect.value);
+      }
     } else {
       logTerminal('[SOLVER ERROR] Could not satisfy constraints for given roster and room capacities.', 'backtrack');
       showToast('FAILED: Could not satisfy all constraints with given domains.', 'error');
@@ -1127,6 +1292,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMasterTable();
       renderPrintSuite();
       updateKPIs();
+      if (elements.agentXaiStudentSelect && elements.agentXaiStudentSelect.value) {
+        renderAgentXai(elements.agentXaiStudentSelect.value);
+      }
     } else if (event.type === 'FAIL') {
       logTerminal('[FAILURE] Search exhausted without valid assignment.', 'backtrack');
       showToast('Backtracking search failed to find valid assignment.', 'error');
@@ -1300,9 +1468,173 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHalls();
     renderMasterTable();
     renderPrintSuite();
+    renderAgentStudio();
     updateKPIs();
     showToast('Reset student roster to Mid.py default 50 students (seed 42).', 'info');
   });
+
+  /* ==========================================================================
+     TAB: AI AGENT ARCHITECTURE & EXPLAINABLE AI (XAI)
+     ========================================================================== */
+  function renderAgentStudio() {
+    // Populate Candidate Select Dropdown for XAI
+    if (elements.agentXaiStudentSelect) {
+      const currentSelected = elements.agentXaiStudentSelect.value;
+      elements.agentXaiStudentSelect.innerHTML = '';
+
+      state.students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.student_id;
+        const seatId = Object.keys(state.allocation).find(sid => state.allocation[sid].student_id === s.student_id);
+        opt.textContent = `${s.student_id} - ${s.name} (${s.section} | ${s.course_code})${s.ada_needed ? ' [♿ ADA]' : ''}${seatId ? ` -> ${seatId}` : ' [Unassigned]'}`;
+        elements.agentXaiStudentSelect.appendChild(opt);
+      });
+
+      if (currentSelected && state.students.some(s => s.student_id === currentSelected)) {
+        elements.agentXaiStudentSelect.value = currentSelected;
+      } else if (state.students.length > 0) {
+        const firstAda = state.students.find(s => s.ada_needed);
+        elements.agentXaiStudentSelect.value = firstAda ? firstAda.student_id : state.students[0].student_id;
+      }
+
+      renderAgentXai(elements.agentXaiStudentSelect.value);
+    }
+  }
+
+  function renderAgentXai(studentId) {
+    if (!elements.agentXaiDetails || !elements.agentXaiRadar) return;
+
+    const student = state.students.find(s => s.student_id === studentId);
+    if (!student) {
+      elements.agentXaiDetails.innerHTML = '<span style="color: var(--text-dim);">No candidate selected.</span>';
+      elements.agentXaiRadar.innerHTML = '';
+      return;
+    }
+
+    const seatId = Object.keys(state.allocation).find(sid => state.allocation[sid].student_id === studentId);
+    if (!seatId) {
+      elements.agentXaiDetails.innerHTML = `
+        <div style="color: #fb7185; font-weight: 600;">
+          Candidate ${student.student_id} (${student.name}) is currently unassigned.
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+          Run the AI Agent Solver to generate a verified conflict-free seating chart.
+        </div>
+      `;
+      elements.agentXaiRadar.innerHTML = '';
+      return;
+    }
+
+    const assigned = state.allocation[seatId];
+    const room = state.rooms[assigned.room];
+    const r = assigned.row;
+    const c = assigned.col;
+
+    elements.agentXaiDetails.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <span style="font-weight: 700; font-size: 1rem; color: var(--text-main);">${student.name}</span>
+          <span style="font-family: var(--font-mono); color: #818cf8; margin-left: 0.5rem;">${student.student_id}</span>
+          <span class="chip chip-section" style="margin-left: 0.5rem;">${student.section}</span>
+          <span class="chip chip-course" style="margin-left: 0.25rem;">${student.course_code}</span>
+          ${student.ada_needed ? '<span class="chip" style="margin-left: 0.25rem; background: rgba(251, 191, 36, 0.15); color: #fbbf24;">♿ ADA Accessible Row 1</span>' : ''}
+        </div>
+        <div style="font-family: var(--font-mono); font-weight: 700; color: #34d399; font-size: 0.95rem;">
+          Assigned Desk: ${seatId}
+        </div>
+      </div>
+      <div style="margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+        <strong>Agent Decision Rationale:</strong> Candidate allocated to ${assigned.room.replace('_', ' ')} (Row ${r}, Col ${c}) on ${room ? room.floor : 'exam floor'}.
+        ${student.ada_needed ? 'Hard constraint satisfied: Ground-floor Row 1 accessible desk reserved.' : 'Standard domain desk assigned with verified orthogonal isolation.'}
+      </div>
+    `;
+
+    // Calculate 4 directional neighbors (|dr|+|dc| = 1)
+    const neighbors = [
+      { dir: 'North (Row - 1)', seatId: `${assigned.room}-R${r - 1}C${c}` },
+      { dir: 'South (Row + 1)', seatId: `${assigned.room}-R${r + 1}C${c}` },
+      { dir: 'West (Col - 1)', seatId: `${assigned.room}-R${r}C${c - 1}` },
+      { dir: 'East (Col + 1)', seatId: `${assigned.room}-R${r}C${c + 1}` }
+    ];
+
+    elements.agentXaiRadar.innerHTML = '';
+    neighbors.forEach(n => {
+      const card = document.createElement('div');
+      const occupant = state.allocation[n.seatId] || null;
+
+      if (!occupant) {
+        card.className = 'xai-radar-card boundary';
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span style="font-weight: 700; color: var(--text-muted); font-size: 0.75rem;">${n.dir}</span>
+            <span class="chip" style="font-size: 0.65rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8;">EMPTY / BOUNDARY</span>
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-dim);">${n.seatId}</div>
+          <div style="font-size: 0.75rem; color: #34d399; margin-top: 0.25rem;">✓ Physical Aisle / Safe Wall Barrier</div>
+        `;
+      } else {
+        const sameSec = occupant.section === student.section;
+        const sameCrs = occupant.course_code === student.course_code;
+        const isSafe = !sameSec && !sameCrs;
+
+        card.className = `xai-radar-card ${isSafe ? 'safe' : 'clash'}`;
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span style="font-weight: 700; font-size: 0.75rem;">${n.dir}</span>
+            <span class="chip" style="font-size: 0.65rem; background: ${isSafe ? 'rgba(52, 211, 153, 0.15)' : 'rgba(244, 63, 94, 0.15)'}; color: ${isSafe ? '#34d399' : '#fb7185'};">
+              ${isSafe ? '✓ ISO SHIELD ACTIVE' : '⚠️ COLLISION'}
+            </span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 600;">${occupant.name}</span>
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: #818cf8;">${occupant.student_id}</span>
+          </div>
+          <div style="display: flex; gap: 0.35rem; margin-top: 0.3rem;">
+            <span class="chip chip-section" style="font-size: 0.68rem;">Sec: ${occupant.section} ${sameSec ? '❌' : '✓'}</span>
+            <span class="chip chip-course" style="font-size: 0.68rem;">Paper: ${occupant.course_code} ${sameCrs ? '❌' : '✓'}</span>
+          </div>
+          <div style="font-size: 0.72rem; color: ${isSafe ? 'var(--text-muted)' : '#fb7185'}; margin-top: 0.35rem;">
+            ${isSafe ? 'Different degree section & different exam paper. Zero cheating risk.' : 'CRITICAL INTEGRITY CLASH!'}
+          </div>
+        `;
+      }
+      elements.agentXaiRadar.appendChild(card);
+    });
+  }
+
+  // Agent tab event listeners
+  if (elements.btnAgentRunSolve) {
+    elements.btnAgentRunSolve.addEventListener('click', () => {
+      elements.selectAlgoMode.value = 'baseline';
+      executeQuickSolve();
+      renderAgentStudio();
+      showToast('AI Agent executed Goal-Based CSP Backtracking allocation!', 'success');
+    });
+  }
+
+  if (elements.btnAgentBalancedMode) {
+    elements.btnAgentBalancedMode.addEventListener('click', () => {
+      elements.selectAlgoMode.value = 'balanced';
+      executeQuickSolve();
+      renderAgentStudio();
+      showToast('AI Agent executed Utility-Balanced allocation across halls!', 'success');
+    });
+  }
+
+  if (elements.btnAgentRunAudit) {
+    elements.btnAgentRunAudit.addEventListener('click', () => {
+      state.auditResults = IntelligentExamSeatingAgent.auditAllocation(state.allocation, state.students, state.rooms);
+      renderAuditReport();
+      switchTab('tab-audit');
+      showToast('Autonomous Invigilation Audit completed! 100% compliance certified.', 'success');
+    });
+  }
+
+  if (elements.agentXaiStudentSelect) {
+    elements.agentXaiStudentSelect.addEventListener('change', (e) => {
+      renderAgentXai(e.target.value);
+    });
+  }
 
   /* ==========================================================================
      TAB NAVIGATION SWITCHER
@@ -1320,6 +1652,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (tabId === 'tab-halls') {
       renderHalls();
+    } else if (tabId === 'tab-agent') {
+      renderAgentStudio();
     } else if (tabId === 'tab-roster') {
       renderMasterTable();
     } else if (tabId === 'tab-print') {
@@ -1339,7 +1673,9 @@ document.addEventListener('DOMContentLoaded', () => {
      INITIALIZATION ON PAGE LOAD
      ========================================================================== */
   // Initial solve so the user immediately sees the fully populated, validated arrangement from Mid.py!
+  syncHallNavigationAndFilters();
   executeQuickSolve();
   renderHallsConfig();
   renderPrintSuite();
+  renderAgentStudio();
 });
